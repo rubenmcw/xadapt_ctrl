@@ -68,5 +68,5 @@ make docker_run
 If you are in the docker image , this project is already sourced and the project can be run as the following command;
 
 ```bash
-python simulate.py 
+python3 simulate.py 
 ```
