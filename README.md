@@ -25,12 +25,22 @@ Video: [YouTube](https://youtu.be/kZEU8lxMZug?si=Y8grEiGLXqEeb2c6)
 ```
 
 
-### Usage
+### Setup
 
-We can run the following scipts to see the simulation of trajectory tracking with our controller.
+We can run the following scipts to setup the code base.
+If successful, you should able to see the simulation of trajectory tracking with our controller.
 ```
 bash setup.bash
 ```
+
+### Learning a extremely adaptive controller
+
+==TODO== we have also included the learning algorithm script and the hyperparameters. However this script is not directly runnable and trainable, it is more like providing the algorithms directly i.e. the replication of Section x.y and a.b. You have to incorporate into your simulator and infrastructure to make the learning happen. 
+
+You can find the code and the config here. 
+==TODO== learning folder
+
+###
 
 ### Docker Setup
 
