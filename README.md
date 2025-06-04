@@ -27,20 +27,44 @@ Video: [YouTube](https://youtu.be/kZEU8lxMZug?si=Y8grEiGLXqEeb2c6)
 
 ### Setup
 
-We can run the following scipts to setup the code base.
-If successful, you should able to see the simulation of trajectory tracking with our controller.
+To set up the codebase, follow these steps:
+
+1. Make sure you are in the xadapt_ctrl folder
+2. Run the following commands:
+
+```bash
+# Initialize git submodules
+git submodule update --init --recursive
+
+# Create and activate conda environment
+conda env create -f environment.yml
+conda activate xadap
+
+# Install py3dmath package
+cd py3dmath
+rm -rf py3dmath.egg-info
+pip install -e .
+cd ..
+
+# Run the simulation
+python simulate.py
 ```
-bash setup.bash
-```
 
-### Learning a extremely adaptive controller
+If successful, you should see the simulation of trajectory tracking with our controller.
 
-==TODO== we have also included the learning algorithm script and the hyperparameters. However this script is not directly runnable and trainable, it is more like providing the algorithms directly i.e. the replication of Section x.y and a.b. You have to incorporate into your simulator and infrastructure to make the learning happen. 
+### ⭐ Learning the Adaptive Controller ⭐
 
-You can find the code and the config here. 
-==TODO== learning folder
+The `learning` directory contains the core implementation of our adaptive controller training code. This includes:
+- Training algorithms from Sections II.B-D of our paper
+- Hyperparameter configurations
+- Model architectures
 
-###
+To use this code, you'll need to:
+1. Set up your own simulation environment
+2. Integrate these training scripts with your infrastructure
+3. Adjust hyperparameters as needed for your specific setup
+
+**Note**: This code is provided as a reference implementation and requires integration with your own training infrastructure.
 
 ### Docker Setup
 
