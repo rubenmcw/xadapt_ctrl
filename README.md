@@ -25,7 +25,7 @@ Video: [YouTube](https://youtu.be/kZEU8lxMZug?si=Y8grEiGLXqEeb2c6)
 ```
 
 
-### Setup
+## Setup
 
 To set up the codebase, follow these steps:
 
@@ -52,7 +52,7 @@ python simulate.py
 
 If successful, you should see the simulation of trajectory tracking with our controller.
 
-### ⭐ Learning the Adaptive Controller ⭐
+## ⭐ Learning the Adaptive Controller ⭐
 
 The `learning` directory contains the core implementation of our adaptive controller training code (paper section II.B-D):
 
@@ -68,7 +68,7 @@ To use this code, you'll need to:
 
 **Note**: This code is provided as a reference implementation. The scripts are not directly runnable and need integration with your own training infrastructure.
 
-### Docker Setup
+## Docker Setup
 
 If your operating system doesn't support environment of this project, docker is a great alternative.
 
@@ -99,7 +99,7 @@ To use a shortcut, you may use following command:
 ```bash
 make docker_run
 ```
-#### Running the package at docker image
+### Running the package at docker image
 
 If you are in the docker image , this project is already sourced and the project can be run as the following command;
 
