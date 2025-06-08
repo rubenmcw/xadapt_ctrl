@@ -16,7 +16,7 @@ class AdapLowLevelControl:
         
         self.maxMotorSpd = 5000 
         
-        self.state_vars = ['ori1', 'ori2', 'ori3', 'ori4', 'ori5', 'ori6', 'ori7', 'ori8', 'ori9', 'wx', 'wy', 'wz', 'prop_acc', 'cmd_wx', 'cmd_wy', 'cmd_wz', 'cmd_prop_acc']
+        self.state_vars = ['wx', 'wy', 'wz', 'prop_acc', 'cmd_wx', 'cmd_wy', 'cmd_wz', 'cmd_prop_acc']
         self.action_vars = ['act1', 'act2', 'act3', 'act4']
         
         history_len = 100
@@ -39,16 +39,11 @@ class AdapLowLevelControl:
         self.maxMotorSpd = max_motor_spd
         
     def convert_vehState(self,veh_state):
-        att_aray = np.array([veh_state.att[1], veh_state.att[2],
-                             veh_state.att[3], veh_state.att[0]])
-        rotation_matrix = R.from_quat(
-            att_aray).as_matrix().reshape((9,), order="F")
-        cur_obs = np.concatenate((rotation_matrix, 
-                                          veh_state.omega, 
-                                          np.array([veh_state.proper_acc[2]],dtype=np.float32),  
-                                          veh_state.cmd_bodyrates,
-                                          np.array([veh_state.cmd_collective_thrust],dtype=np.float32),  
-                                                    ), axis=0).astype(np.float32)
+        cur_obs = np.concatenate((veh_state.omega, 
+                                np.array([veh_state.proper_acc[2]],dtype=np.float32),  
+                                veh_state.cmd_bodyrates,
+                                np.array([veh_state.cmd_collective_thrust],dtype=np.float32),  
+                                        ), axis=0).astype(np.float32)
         return cur_obs
         
     def run(self,veh_state):

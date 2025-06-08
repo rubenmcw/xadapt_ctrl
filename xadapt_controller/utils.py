@@ -6,7 +6,7 @@ import onnx
 from onnx import numpy_helper
 from enum import Enum
 import os
-
+import warnings
 
 class ModelType(Enum):
     BASE_MODEL = 1
@@ -20,17 +20,23 @@ class Model:
         self.base_model_path = current_path+base_model_path
         self.adap_module_path = current_path+adap_module_path
         self.model_rms_path = current_path+model_rms_path
+        if not os.path.exists(self.model_rms_path):
+            # warning user that rms data is not found
+            warnings.warn(f"RMS data file not found at {self.model_rms_path}, using default mean and var csv files.")
 
-        rms_data = np.load(self.model_rms_path)
-        self.obs_mean = np.mean(rms_data["mean"], axis=0)
-        self.obs_var = np.mean(rms_data["var"], axis=0)
+            self.obs_mean = np.loadtxt(current_path+'/benchmark/mean.csv', delimiter=" ")
+            self.obs_var = np.loadtxt(current_path+'/benchmark/var.csv', delimiter=" ")
+        else:
+            rms_data = np.load(self.model_rms_path)
+            self.obs_mean = np.mean(rms_data["mean"], axis=0)
+            self.obs_var = np.mean(rms_data["var"], axis=0)
 
         self.act_mean = np.array([1.0 / 2, 1.0 / 2,
                                   1.0 / 2, 1.0 / 2])[np.newaxis, :]
         self.act_std = np.array([1.0 / 2, 1.0 / 2,
                                  1.0 / 2, 1.0 / 2])[np.newaxis, :]
         self.act_size = 4
-        self.state_obs_size = 17
+        self.state_obs_size = 8
         self.history_len = 100
 
         self.base_session = None
