@@ -54,17 +54,19 @@ If successful, you should see the simulation of trajectory tracking with our con
 
 ### ⭐ Learning the Adaptive Controller ⭐
 
-The `learning` directory contains the core implementation of our adaptive controller training code. This includes:
-- Training algorithms from Sections II.B-D of our paper
-- Hyperparameter configurations
-- Model architectures
+The `learning` directory contains the core implementation of our adaptive controller training code (paper section II.B-D):
+
+- `ppo.py`: Unified RL (PPO) + IL curriculum learning implementation for Phase 1 training (despite its name, it's more than just PPO 😉)
+- `dagger.py`: DAGGER algorithm implementation for Phase 2 training
+- `train.py`: Unified training script for the two-phase process
+- `hyperparam.yaml`: Configuration file for training hyperparameters
 
 To use this code, you'll need to:
 1. Set up your own simulation environment
 2. Integrate these training scripts with your infrastructure
 3. Adjust hyperparameters as needed for your specific setup
 
-**Note**: This code is provided as a reference implementation and requires integration with your own training infrastructure.
+**Note**: This code is provided as a reference implementation. The scripts are not directly runnable and need integration with your own training infrastructure.
 
 ### Docker Setup
 
