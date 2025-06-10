@@ -13,14 +13,17 @@ Video: [YouTube](https://youtu.be/kZEU8lxMZug?si=Y8grEiGLXqEeb2c6)
 
 
 ```
-@misc{zhang2024learningbasedquadcoptercontrollerextreme,
-      title={A Learning-based Quadcopter Controller with Extreme Adaptation}, 
-      author={Dingqi Zhang and Antonio Loquercio and Jerry Tang and Ting-Hao Wang and Jitendra Malik and Mark W. Mueller},
-      year={2024},
-      eprint={2409.12949},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2409.12949}, 
+
+@article{zhang2024learningbasedquadcoptercontrollerextreme,
+   title={A Learning-based Quadcopter Controller with Extreme Adaptation},
+   ISSN={1941-0468},
+   url={http://dx.doi.org/10.1109/TRO.2025.3577037},
+   DOI={10.1109/tro.2025.3577037},
+   journal={IEEE Transactions on Robotics},
+   publisher={Institute of Electrical and Electronics Engineers (IEEE)},
+   author={Zhang, Dingqi and Loquercio, Antonio and Tang, Jerry and Wang, Ting-Hao and Malik, Jitendra and Mueller, Mark W.},
+   year={2025},
+   pages={1–17}
 }
 ```
 
