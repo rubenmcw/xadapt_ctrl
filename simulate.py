@@ -77,7 +77,7 @@ low_level_controller = AdapLowLevelControl()
 cur_state = QuadState()
 # Set the maximum motor speed for this quadcopter model in RPM
 # Note: because the controller can adapt down to motors-level, this highest-rpm 
-# can be gained directly from motor datasheet without measurements from the experiments.
+# can be gained directly from motor datasheet without measuremeQuadcopterAttnts from the experiments.
 low_level_controller.set_max_motor_spd(motMaxSpeed)
 
 #==============================================================================

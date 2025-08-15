@@ -5,6 +5,7 @@ import os
 from learning.ppo import PPO
 from learning.dagger import DAGGER
 from learning.module import StateHistoryEncoder
+from learning.quadrotor_env import QuadrotorEnv
 import numpy as np
 import torch
 from ruamel.yaml import YAML, RoundTripDumper, dump
@@ -34,7 +35,7 @@ def parser():
 def setup_environments(cfg, args):
     # Create training environment
     # TODO replace with your own environment
-    train_env = QuadrotorEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
+    train_env = QuadrotorEnv(dump(cfg, Dumper=RoundTripDumper), False)
 
     # Set random seed
     configure_random_seed(args.seed, env=train_env)
@@ -43,7 +44,7 @@ def setup_environments(cfg, args):
     old_num_envs = cfg["simulation"]["num_envs"]
     cfg["simulation"]["num_envs"] = 1
     # TODO replace with your own environment
-    eval_env = QuadrotorEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
+    eval_env = QuadrotorEnv(dump(cfg, Dumper=RoundTripDumper), False)
     cfg["simulation"]["num_envs"] = old_num_envs
 
     return train_env, eval_env

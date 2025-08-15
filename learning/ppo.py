@@ -7,17 +7,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch as th
-from gym import spaces
+import torch.nn.functional as F
+from gymnasium import spaces
 from mpl_toolkits.mplot3d import Axes3D
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import safe_mean
+from stable_baselines3.common.utils import safe_mean, get_schedule_fn, explained_variance
 from stable_baselines3.common.vec_env import VecEnv
+
+from stable_baselines3.common.buffers import Ph1RolloutBuffer
+
 
 import wandb
 from collections import defaultdict
+from ruamel.yaml import YAML
 
 class OnPolicyAlgorithm(BaseAlgorithm):
     """
@@ -590,7 +595,7 @@ class PPO(OnPolicyAlgorithm):
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         
-        # Compute current clip range
+        # Compute current clip range.n_
         clip_range = self.clip_range(self._current_progress_remaining)
         if self.clip_range_vf is not None:
             clip_range_vf = self.clip_range_vf(self._current_progress_remaining)
