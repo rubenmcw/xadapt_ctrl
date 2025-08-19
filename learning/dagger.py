@@ -22,6 +22,99 @@ from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 
 
+class ExtrinsincsRolloutBuffer:
+    """Buffer to store rollouts with extrinsic information for DAGGER training."""
+
+    def __init__(
+        self,
+        buffer_size: int,
+        latent_size: int,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: th.device,
+        n_envs: int = 1,
+    ) -> None:
+        self.buffer_size = buffer_size
+        self.latent_size = latent_size
+        self.device = device
+        self.n_envs = n_envs
+
+        obs_shape = observation_space.shape
+        self.observations = np.zeros((buffer_size, n_envs) + obs_shape, dtype=np.float32)
+
+        action_shape = (1,) if isinstance(action_space, spaces.Discrete) else action_space.shape
+        self.actions = np.zeros((buffer_size, n_envs) + action_shape, dtype=np.float32)
+        self.rewards = np.zeros((buffer_size, n_envs), dtype=np.float32)
+        self.episode_starts = np.zeros((buffer_size, n_envs), dtype=np.float32)
+
+        self.extrinsincs = np.zeros((buffer_size, n_envs, latent_size), dtype=np.float32)
+        self.est_extrinsincs = np.zeros((buffer_size, n_envs, latent_size), dtype=np.float32)
+        self.last_true_extrinsics = np.zeros((buffer_size, n_envs, latent_size), dtype=np.float32)
+
+        self.pos = 0
+        self.full = False
+
+    def reset(self) -> None:
+        self.pos = 0
+        self.full = False
+
+    def add(
+        self,
+        obs: np.ndarray,
+        actions: np.ndarray,
+        rewards: np.ndarray,
+        episode_starts: np.ndarray,
+        extrinsincs: Union[np.ndarray, th.Tensor],
+        est_extrinsincs: Union[np.ndarray, th.Tensor],
+        last_true_extrinsics: Union[np.ndarray, th.Tensor],
+    ) -> None:
+        self.observations[self.pos] = obs.copy()
+        self.actions[self.pos] = actions.copy()
+        self.rewards[self.pos] = rewards.copy()
+        self.episode_starts[self.pos] = episode_starts.copy()
+        self.extrinsincs[self.pos] = (
+            extrinsincs.detach().cpu().numpy() if isinstance(extrinsincs, th.Tensor) else np.array(extrinsincs)
+        )
+        self.est_extrinsincs[self.pos] = (
+            est_extrinsincs.detach().cpu().numpy() if isinstance(est_extrinsincs, th.Tensor) else np.array(est_extrinsincs)
+        )
+        self.last_true_extrinsics[self.pos] = (
+            last_true_extrinsics.detach().cpu().numpy()
+            if isinstance(last_true_extrinsics, th.Tensor)
+            else np.array(last_true_extrinsics)
+        )
+
+        self.pos += 1
+        if self.pos >= self.buffer_size:
+            self.full = True
+            self.pos = 0
+
+    def get(self, batch_size: int):
+        assert self.full, "Rollout buffer must be full before sampling."
+
+        total_size = self.buffer_size * self.n_envs
+        indices = np.random.permutation(total_size)
+
+        obs = self.observations.reshape(total_size, *self.observations.shape[2:])
+        actions = self.actions.reshape(total_size, *self.actions.shape[2:])
+        rewards = self.rewards.reshape(total_size)
+        episode_starts = self.episode_starts.reshape(total_size)
+        extr = self.extrinsincs.reshape(total_size, self.latent_size)
+        est_extr = self.est_extrinsincs.reshape(total_size, self.latent_size)
+        last_true = self.last_true_extrinsics.reshape(total_size, self.latent_size)
+
+        for start in range(0, total_size, batch_size):
+            batch_inds = indices[start : start + batch_size]
+            yield {
+                "observations": obs[batch_inds],
+                "actions": actions[batch_inds],
+                "rewards": rewards[batch_inds],
+                "episode_starts": episode_starts[batch_inds],
+                "extrinsincs": extr[batch_inds],
+                "est_extrinsincs": est_extr[batch_inds],
+                "last_true_extrinsics": last_true[batch_inds],
+            }
+
 class PhaseTwoAlgorithm(BaseAlgorithm):
     """
     Base class for Phase Two algorithms (e.g., DAGGER).
