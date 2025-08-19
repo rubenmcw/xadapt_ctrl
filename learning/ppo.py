@@ -17,9 +17,6 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import safe_mean, get_schedule_fn, explained_variance
 from stable_baselines3.common.vec_env import VecEnv
 
-from stable_baselines3.common.buffers import Ph1RolloutBuffer
-
-
 import wandb
 from collections import defaultdict
 from ruamel.yaml import YAML

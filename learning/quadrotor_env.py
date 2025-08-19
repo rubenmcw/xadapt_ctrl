@@ -1,6 +1,6 @@
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 from ruamel.yaml import YAML
 from py3dmath import Vec3, Rotation
 

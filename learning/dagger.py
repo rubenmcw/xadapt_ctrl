@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-import gym
+import gymnasium as gym
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +11,7 @@ import pandas as pd
 import torch as th
 import torch.nn as nn
 import torch.optim as optim
-from gym import spaces
+from gymnasium import spaces
 from mpl_toolkits.mplot3d import Axes3D
 from ruamel.yaml import YAML
 from stable_baselines3.common.base_class import BaseAlgorithm
