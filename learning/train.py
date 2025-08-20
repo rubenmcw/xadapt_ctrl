@@ -80,14 +80,18 @@ def main():
     if args.phase == 1:
         # Phase 1: PPO Training
 
-        latent_size = cfg['observation_space']['latent_size']
+        # Ensure network architecture only contains integers
+        latent_size = int(cfg["observation_space"]["latent_size"])
+        shared_layers = [128, 128, latent_size]
+        pi_layers = [256, 256]
+        vf_layers = [512, 512]
 
         model = PPO(
             tensorboard_log=log_dir,
             policy="MlpPolicy",
             policy_kwargs=dict(
                 activation_fn=torch.nn.Tanh,
-                net_arch=[128, 128, latent_size, dict(pi=[256, 256], vf=[512, 512])],
+                net_arch=shared_layers + [dict(pi=pi_layers, vf=vf_layers)],
                 log_std_init=-0.5,
             ),
             env=train_env,
@@ -101,7 +105,7 @@ def main():
             min_BC_coef=0.1,
             BC_alpha=0.999,
             max_grad_norm=0.5,
-            batch_size=25000,
+            batch_size=500,
             clip_range=0.2,
             use_sde=False,
             env_cfg=cfg,
