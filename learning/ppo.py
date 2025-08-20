@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, NamedTuple
 
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -20,6 +20,156 @@ from stable_baselines3.common.vec_env import VecEnv
 import wandb
 from collections import defaultdict
 from ruamel.yaml import YAML
+
+class Ph1RolloutBufferSamples(NamedTuple):
+    """Sample from the phase-one rollout buffer.
+
+    This mirrors the :class:`stable_baselines3` rollout sample structure and
+    provides convenient attribute based access to the tensors returned when
+    sampling mini-batches.
+    """
+
+    observations: th.Tensor
+    actions: th.Tensor
+    privileged_actions: th.Tensor
+    old_values: th.Tensor
+    old_log_prob: th.Tensor
+    advantages: th.Tensor
+    returns: th.Tensor
+
+
+class Ph1RolloutBuffer:
+    """Rollout buffer used during Phase 1 training.
+
+    The buffer stores the transitions collected by the policy and allows
+    computing Generalized Advantage Estimation (GAE) as well as sampling
+    mini-batches for policy optimisation. In addition to the usual data stored
+    in on-policy buffers, this buffer also keeps *privileged* actions which are
+    used for behaviour cloning losses.
+    """
+
+    def __init__(
+        self,
+        buffer_size: int,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: th.device,
+        gamma: float,
+        gae_lambda: float,
+        n_envs: int = 1,
+    ) -> None:
+        self.buffer_size = buffer_size
+        self.n_envs = n_envs
+        self.device = device
+        self.gamma = gamma
+        self.gae_lambda = gae_lambda
+
+        self.pos = 0
+        self.full = False
+
+        obs_shape = observation_space.shape
+        self.observations = np.zeros((buffer_size, n_envs) + obs_shape, dtype=np.float32)
+
+        action_shape = (1,) if isinstance(action_space, spaces.Discrete) else action_space.shape
+        self.actions = np.zeros((buffer_size, n_envs) + action_shape, dtype=np.float32)
+        self.privileged_actions = np.zeros((buffer_size, n_envs) + action_shape, dtype=np.float32)
+
+        self.rewards = np.zeros((buffer_size, n_envs), dtype=np.float32)
+        self.episode_starts = np.zeros((buffer_size, n_envs), dtype=np.float32)
+        self.values = np.zeros((buffer_size, n_envs), dtype=np.float32)
+        self.log_probs = np.zeros((buffer_size, n_envs), dtype=np.float32)
+
+        self.advantages = np.zeros((buffer_size, n_envs), dtype=np.float32)
+        self.returns = np.zeros((buffer_size, n_envs), dtype=np.float32)
+
+    def reset(self) -> None:
+        """Reset the buffer."""
+        self.pos = 0
+        self.full = False
+
+    def add(
+        self,
+        obs: np.ndarray,
+        actions: np.ndarray,
+        privileged_actions: np.ndarray,
+        rewards: np.ndarray,
+        episode_starts: np.ndarray,
+        values: th.Tensor,
+        log_probs: th.Tensor,
+    ) -> None:
+        """Add a new transition to the buffer."""
+
+        self.observations[self.pos] = obs.copy()
+        self.actions[self.pos] = actions.copy()
+        self.privileged_actions[self.pos] = privileged_actions.copy()
+        self.rewards[self.pos] = rewards.copy()
+        self.episode_starts[self.pos] = episode_starts.copy()
+        self.values[self.pos] = values.detach().cpu().numpy().flatten()
+        self.log_probs[self.pos] = log_probs.detach().cpu().numpy().flatten()
+
+        self.pos += 1
+        if self.pos >= self.buffer_size:
+            self.full = True
+            self.pos = 0
+
+    def compute_returns_and_advantage(
+        self, last_values: th.Tensor, dones: np.ndarray
+    ) -> None:
+        """Compute returns and advantage using GAE."""
+
+        last_values = last_values.detach().cpu().numpy().flatten()
+        last_gae_lam = np.zeros(self.n_envs)
+
+        for step in reversed(range(self.buffer_size)):
+            if step == self.buffer_size - 1:
+                next_non_terminal = 1.0 - dones
+                next_values = last_values
+            else:
+                next_non_terminal = 1.0 - self.episode_starts[step + 1]
+                next_values = self.values[step + 1]
+
+            delta = (
+                self.rewards[step]
+                + self.gamma * next_values * next_non_terminal
+                - self.values[step]
+            )
+            last_gae_lam = (
+                delta
+                + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+            )
+            self.advantages[step] = last_gae_lam
+
+        self.returns = self.advantages + self.values
+
+    def get(self, batch_size: int):
+        """Get generator that yields batches of transitions."""
+        assert self.full, "Rollout buffer must be full before sampling."
+
+        total_size = self.buffer_size * self.n_envs
+        indices = np.random.permutation(total_size)
+
+        obs = self.observations.reshape(total_size, *self.observations.shape[2:])
+        actions = self.actions.reshape(total_size, *self.actions.shape[2:])
+        priv_actions = self.privileged_actions.reshape(
+            total_size, *self.privileged_actions.shape[2:]
+        )
+        values = self.values.reshape(total_size)
+        log_probs = self.log_probs.reshape(total_size)
+        advantages = self.advantages.reshape(total_size)
+        returns = self.returns.reshape(total_size)
+
+        for start in range(0, total_size, batch_size):
+            batch_inds = indices[start : start + batch_size]
+            batch = (
+                th.as_tensor(obs[batch_inds]).to(self.device),
+                th.as_tensor(actions[batch_inds]).to(self.device),
+                th.as_tensor(priv_actions[batch_inds]).to(self.device),
+                th.as_tensor(values[batch_inds]).to(self.device),
+                th.as_tensor(log_probs[batch_inds]).to(self.device),
+                th.as_tensor(advantages[batch_inds]).to(self.device),
+                th.as_tensor(returns[batch_inds]).to(self.device),
+            )
+            yield Ph1RolloutBufferSamples(*batch)
 
 class OnPolicyAlgorithm(BaseAlgorithm):
     """
