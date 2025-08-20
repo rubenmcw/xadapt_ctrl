@@ -8,7 +8,8 @@ from learning.module import StateHistoryEncoder
 from learning.quadrotor_env import QuadrotorEnv
 import numpy as np
 import torch
-from ruamel.yaml import YAML, RoundTripDumper, dump
+from ruamel.yaml import YAML
+from io import StringIO
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.ppo.policies import MlpPolicy
 
@@ -32,10 +33,18 @@ def parser():
                         help="Training phase: 1 for PPO, 2 for DAGGER")
     return parser
 
+def _dump_yaml(cfg):
+    """Serialize configuration dictionary to a YAML string."""
+    yaml = YAML()
+    stream = StringIO()
+    yaml.dump(cfg, stream)
+    return stream.getvalue()
+
+
 def setup_environments(cfg, args):
     # Create training environment
     # TODO replace with your own environment
-    train_env = QuadrotorEnv(dump(cfg, Dumper=RoundTripDumper), False)
+    train_env = QuadrotorEnv(_dump_yaml(cfg), False)
 
     # Set random seed
     configure_random_seed(args.seed, env=train_env)
@@ -44,7 +53,7 @@ def setup_environments(cfg, args):
     old_num_envs = cfg["simulation"]["num_envs"]
     cfg["simulation"]["num_envs"] = 1
     # TODO replace with your own environment
-    eval_env = QuadrotorEnv(dump(cfg, Dumper=RoundTripDumper), False)
+    eval_env = QuadrotorEnv(_dump_yaml(cfg), False)
     cfg["simulation"]["num_envs"] = old_num_envs
 
     return train_env, eval_env
