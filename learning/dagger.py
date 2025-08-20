@@ -217,22 +217,30 @@ class PhaseTwoAlgorithm(BaseAlgorithm):
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
+        # ``policy_base`` and ``create_eval_env`` are no longer accepted by
+        # ``BaseAlgorithm`` in recent releases of ``stable-baselines3``.  Passing
+        # them would raise a ``TypeError`` during initialisation.  The base class
+        # now infers the correct policy type and evaluation environment
+        # handling is performed separately, so we only pass the supported
+        # arguments here.
         super(PhaseTwoAlgorithm, self).__init__(
             policy=policy,
             env=env,
-            policy_base=ActorCriticPolicy,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             device=device,
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
-            create_eval_env=create_eval_env,
             support_multi_env=True,
+            monitor_wrapper=monitor_wrapper,
             seed=seed,
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )
+
+        if not issubclass(self.policy_class, ActorCriticPolicy):
+            raise ValueError("Policy must inherit from ActorCriticPolicy")
 
         # Store algorithm parameters
         self.env_latent_encoder = env_latent_encoder
