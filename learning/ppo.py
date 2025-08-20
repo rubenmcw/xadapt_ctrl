@@ -254,22 +254,31 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         _init_setup_policy: bool = True,
         supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
     ):
+        # ``stable-baselines3`` removed the ``policy_base`` and ``create_eval_env``
+        # arguments from ``BaseAlgorithm.__init__`` in recent versions.  Passing
+        # them now results in a ``TypeError`` like the one observed in the
+        # training script.  The base class already infers the policy class from
+        # the ``policy`` argument, and evaluation environments are handled
+        # outside of the base constructor.  To maintain compatibility with the
+        # latest API we simply forward the supported parameters.
         super(OnPolicyAlgorithm, self).__init__(
             policy=policy,
             env=env,
-            policy_base=ActorCriticPolicy,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
             verbose=verbose,
             device=device,
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
-            create_eval_env=create_eval_env,
             support_multi_env=True,
+            monitor_wrapper=monitor_wrapper,
             seed=seed,
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )
+
+        if not issubclass(self.policy_class, ActorCriticPolicy):
+            raise ValueError("Policy must inherit from ActorCriticPolicy")
 
         # Store algorithm parameters
         self.n_steps = n_steps
@@ -650,6 +659,14 @@ class PPO(OnPolicyAlgorithm):
         env_cfg: str = None,
         _init_setup_model: bool = True,
     ):
+        # Map common policy names to the base ``ActorCriticPolicy`` so that
+        # string aliases like ``"MlpPolicy"`` remain supported.  This mirrors
+        # the behaviour of stable-baselines3 and avoids a ``ValueError`` when
+        # a string is provided instead of a class.
+        self.policy_aliases = {
+            "MlpPolicy": ActorCriticPolicy,
+        }
+
         super(PPO, self).__init__(
             policy,
             env,
