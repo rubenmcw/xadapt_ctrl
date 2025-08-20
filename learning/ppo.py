@@ -317,21 +317,10 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         # Setup policy
         if self._init_setup_policy:
-            # Explicitly pass the algorithm's device to the policy constructor.
-            #
-            # Stable-Baselines3 expects a valid ``torch.device`` when building
-            # the policy networks.  The previous implementation omitted the
-            # ``device`` argument, leaving it as ``None`` inside the policy.
-            # With recent versions of PyTorch this results in layers being
-            # initialised with ``device=None`` and ``dtype=None`` which raises a
-            # ``TypeError`` during network construction (``torch.empty`` cannot
-            # handle ``None`` values).  Forwarding the device ensures the policy
-            # is properly initialised on CPU or GPU.
             self.policy = self.policy_class(
                 self.observation_space,
                 self.action_space,
                 self.lr_schedule,
-                device=self.device,
                 use_sde=self.use_sde,
                 **self.policy_kwargs,
             )
@@ -613,6 +602,7 @@ class PPO(OnPolicyAlgorithm):
     max_grad_norm : float, optional
         The maximum value for the gradient clipping, by default 0.5
     use_sde : bool, optional
+    def train(self) 
         Whether to use State Dependent Exploration, by default False
     sde_sample_freq : int, optional
         Sample a new noise matrix every n steps when using gSDE, by default -1
